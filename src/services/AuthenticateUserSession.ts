@@ -4,6 +4,9 @@ import { compare } from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
 
 import User from '../models/User';
+import authConfig from '../config/auth';
+
+import AppError from '../errors/AppError';
 
 interface Request {
     email: string;
@@ -23,16 +26,17 @@ class AuthenticateUserService {
         });
 
         if (!user) {
-            throw new Error('Incorret email/password combination.');
+            throw new AppError('Incorret email/password combination.', 401);
         }
 
         const passwordMatched = await compare(password, user.password);
         if (!passwordMatched) {
-            throw new Error('Incorret email/password combination.');
+            throw new AppError('Incorret email/password combination.', 401);
         }
-        const token = sign({}, '3a966d4eaa547bf5cae20f1b5d7b225f', {
+        const { secret, expiresIn } = authConfig.jtw;
+        const token = sign({}, secret, {
             subject: user.id,
-            expiresIn: '1d',
+            expiresIn,
         });
         return {
             user,
